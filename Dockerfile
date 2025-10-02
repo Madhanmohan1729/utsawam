@@ -1,17 +1,20 @@
 # ================================
-# Stage 1 - Build Frontend (Vite)
+# Stage 1 - Build Frontend (Vite + Vue + Inertia + Tailwind)
 # ================================
 FROM node:22 AS frontend
 
 WORKDIR /app
 
-# Copy only frontend-related files first (for better caching)
-COPY package*.json vite.config.js ./
+# Copy frontend dependencies and Vite config
+COPY package*.json vite.config.ts tsconfig.json ./
+
+# Copy frontend source files
 COPY resources ./resources
 
+# Install frontend dependencies
 RUN npm install
 
-# Build assets (output goes to /public/build)
+# Build the frontend (output goes to /public/build)
 RUN npm run build
 
 
@@ -20,7 +23,7 @@ RUN npm run build
 # ================================
 FROM php:8.2-fpm AS backend
 
-# Install system dependencies
+# Install PHP system dependencies
 RUN apt-get update && apt-get install -y \
     git curl unzip libpq-dev libonig-dev libzip-dev zip \
     && docker-php-ext-install pdo pdo_mysql mbstring zip
@@ -28,19 +31,19 @@ RUN apt-get update && apt-get install -y \
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
 
-# Set working directory
+# Set working directory for Laravel app
 WORKDIR /var/www
 
-# Copy all backend source code
+# Copy backend code (Laravel app)
 COPY . .
 
-# ✅ Copy built frontend assets from Vite (Inertia + Laravel uses /public/build)
+# ✅ Copy built frontend assets from Vite (used by Laravel)
 COPY --from=frontend /app/public/build ./public/build
 
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Laravel setup
+# Laravel setup (you can adjust caching here)
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear
