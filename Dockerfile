@@ -43,7 +43,7 @@ COPY --from=frontend /app/public/build ./public/build
 # Install Laravel dependencies
 RUN composer install --no-dev --optimize-autoloader
 
-# Laravel setup (you can adjust caching here)
+# Laravel setup
 RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear
