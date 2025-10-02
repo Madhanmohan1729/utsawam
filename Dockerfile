@@ -21,12 +21,12 @@ RUN npm run build
 # ================================
 # Stage 2 - Backend (Laravel + PHP + Composer)
 # ================================
-FROM php:8.2-fpm AS backend
+FROM php:8.2-cli AS backend
 
 # Install PHP system dependencies
 RUN apt-get update && apt-get install -y \
     git curl unzip libpq-dev libonig-dev libzip-dev zip \
-    && docker-php-ext-install pdo pdo_mysql mbstring zip
+    && docker-php-ext-install pdo pdo_pgsql mbstring zip
 
 # Install Composer
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer
@@ -48,5 +48,8 @@ RUN php artisan config:clear && \
     php artisan route:clear && \
     php artisan view:clear
 
-# Start PHP-FPM
-CMD ["php-fpm"]
+# Expose port 8000
+EXPOSE 8000
+
+# Start Laravel development server
+CMD ["php", "artisan", "serve", "--host=0.0.0.0", "--port=8000"]
